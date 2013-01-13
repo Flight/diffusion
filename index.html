@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="css/normalize.css" rel="stylesheet" type="text/css" media="all" />
+    <link href="css/main.css" rel="stylesheet" type="text/css" media="all" />
+    <!--[if lt IE 9]>
+        <link href="css/ie.css" rel="stylesheet" type="text/css" media="all" />
+        <script src="js/html5.js"></script>
+    <![endif]-->
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.store.js" type="text/javascript"></script>
+    <script src="js/jquery.jqplot.min.js" type="text/javascript"></script>
+    <script src="js/common.js"></script>
+    <title>Diplom</title>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="canvas1_container">
+            <h1 style="text-align: center;">Діаграма дифузійного процесу</h1>
+            <canvas width="601" height="601" id="myCanvas" style="margin: 0 auto; display:block;">Обновите браузер</canvas>
+        </div>
+        
+        <div id="options">
+            <div class="evaluate_container"><input type="button" id="evaluate" value="Розрахувати" class="dec-red dec-bold"></div>
+            
+            <div class="output hidden" id="info">
+                Час: <strong id="time"></strong> сек. (<strong id="formatted_time2"></strong>)<br>
+                Положення: <strong id="abs"></strong> м.<br>
+                Концентрація: <strong id="conc"></strong>%
+                <div class="gradient">
+                    <span class="left">0%</span>
+                    <span class="right">100%</span>
+                </div>
+            </div>
+            
+            <div class="output hidden" id="info2">
+                Курсор: <strong id="coordX"></strong>:<strong id="coordY"></strong><br>
+            </div>
+            
+            <label class="radio"><input name="sk" type="radio" id="sk_1" value="1" checked default="checked"> Декартова система координат</label>
+            <label class="radio"><input name="sk" type="radio" id="sk_2" value="2" default="unchecked"> Циліндрична система координат</label>
+            
+            <!--<label><input name="" type="checkbox" checked value="" id="r_1"> </label><br> -->
+            <label><input name="T" type="number" value="" min="0" default="7200000" id="param_T"> Час процесу, сек (<strong id="formatted_time"></strong>)</label><br>
+            <label><input name="L" type="number" value="" min="0" default="0.0001" step="0.0001" id="param_L"> Товщина пластини, м</label><br>
+            <label><input name="D" type="number" value="" min="0" step="0.1e-15" default="1.2e-15" id="param_D"> Коефіцієнт дифузії, м<sup>2</sup>/c</label><br>
+            <label><input name="Cmax" type="number" value="" min="0" max="100" step="1" default="100" id="param_Cmax"> Гранична розчинність, %</label><br>
+            <div class="header-small">Умови легування на лівому краю пластини</div>
+            <label class="radio"><input name="bound_type_left" type="radio" id="bound_type_left_1" value="1" checked default="checked"> Граничні умови Діріхлє (постійна концентрація присадки)</label>
+            <label class="radio"><input name="bound_type_left" type="radio" id="bound_type_left_2" value="2" default="unchecked"> Граничні умови Неймана (постійний градієнт концентрації)</label>
+            <label class="radio"><input name="bound_type_left" type="radio" id="bound_type_left_3" value="3" default="unchecked"> Комбіновані граничні умови (обмежена кількисть присадки)</label>
+            <label><input name="C1" type="number" value="" min="0" default="50" max="100" id="param_C1"> Концентрація, об.%</label><br>
+            <label><input name="Q1" type="number" value="" min="0" default="0.005" step="0.001" id="param_Q1"> Кількість легуючої присадки, об.%*м</label><br>
+            <div class="header-small">Умови легування на правому краю пластини</div>
+            <label class="radio"><input name="bound_type_right" type="radio" id="bound_type_right_1" value="1" checked default="checked"> Граничні умови Діріхлє (постійна концентрація присадки)</label>
+            <label class="radio"><input name="bound_type_right" type="radio" id="bound_type_right_2" value="2" default="unchecked"> Граничні умови Неймана (постійний градієнт концентрації)</label>
+            <label class="radio"><input name="bound_type_right" type="radio" id="bound_type_right_3" value="3" default="unchecked"> Комбіновані граничні умови (обмежена кількисть присадки)</label>
+            <label><input name="C2" type="number" value="" min="0" default="80" max="100" id="param_C2"> Концентрація, об.%</label><br>
+            <label><input name="Q2" type="number" value="" min="0" default="0.008" step="0.001" id="param_Q2"> Кількість легуючої присадки, об.%*м</label><br>
+            <div class="output">Безрозмірна дифузія: <strong id="diffusion"></strong> <div class="dec-red">(якщо більше, ніж 100, операція займе багато часу)</div></div>
+            
+            <label class="radio"><input name="use_prev" type="checkbox" id="use_prev" default="unchecked"> Використати попередні результати</label>
+            
+            <input type="button" id="save" value="Зберегти">
+            <input type="button" id="load" value="Завантажити">
+            <input type="button" id="default" value="Стандартні" class="default">
+        </div>
+    </div>
+</body>
+</html>
