@@ -1,11 +1,15 @@
 $(document).ready(function(){
-	var canvas = document.getElementById("myCanvas");
-    var canvasWidth = canvas.width;
-    var canvasHeight = canvas.height;
-    var ctx = canvas.getContext("2d");
+	var canvas = document.getElementById("myCanvas");					// Zadaemo holst
+    var canvasWidth = canvas.width;										// Zadaemo shirinu holstu
+    var canvasHeight = canvas.height;									// Zadaemo visotu holstu
+    var ctx = canvas.getContext("2d");									// Viznachaemo 2d koordinaty
     var canvasData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+    var c_prev, c_next, c_full;
+
+    // Stvoruemo ob'ekt dlay zberigannya
     $.storage = new $.store();
     
+    // Funkciya popikselnogo maluvannya
     function drawPixel (x, y, r, g, b, a) {
         var index = (x + y * canvasWidth) * 4;
     
@@ -15,10 +19,12 @@ $(document).ready(function(){
         canvasData.data[index + 3] = a;
     }
     
+    // Funkciya ponovlennya holstu
     function updateCanvas() {
         ctx.putImageData(canvasData, 0, 0);
     }
 
+    // Funkciya vyznachennya koordinati mishi vidnosno holstu
     function relMouseCoords(event){
 		var canvasX = 0, canvasY = 0, canvas = this;
 
@@ -30,6 +36,7 @@ $(document).ready(function(){
     }
     HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
+    // Funkciya ustanovky parametriv
 	function setParams() {
 		$('#options input[type="text"], #options input[type="number"]').each(function() {
 			var name = $(this).attr('name');
@@ -48,6 +55,7 @@ $(document).ready(function(){
 		});
 	}
 
+	// Funkciya dlya zavantazhennya standartnih parametiv
 	function defaultParams() {
 		$('#options input[type="text"], #options input[type="number"]').each(function() {
 			var name = $(this).attr('name');
@@ -62,15 +70,17 @@ $(document).ready(function(){
 		});
 	}
 
+	// Funkciya otrimannya parametriv vid koristuvacha
 	function getParam(name) {
 		var $param = $('#param_'+name);
 		if ($param.is('[type="number"]')) {
 			return parseFloat($param.val());
-		} else if ($param.is('[type="radio"]')) {
+		} else if ($param.is('[type="radio"]') || $param.is('[type="checkbox"]')) {
 			return $param.is(':checked');
 		}
 	}
 
+	// Funkciya zberigannya parametriv
 	function saveParams() {
 		$('#options input[type="text"], #options input[type="number"]').each(function() {
 			var name = $(this).attr('name');
@@ -85,6 +95,7 @@ $(document).ready(function(){
 
 	defaultParams();
 
+	// Funkciya converacii sekund u dd:hh:mm:ss
 	function convertTime(secs) {
 		var minutes = Math.floor(secs / 60);
 		var seconds = secs - minutes*60;
@@ -104,6 +115,20 @@ $(document).ready(function(){
 		$('#formatted_time').html(convertTime($('#param_T').val()));
 	});
 
+	function initCLeft() {
+		if ($('[name="sk"]:checked').val() == '1') {
+			$('#c_left').hide();
+			$('#c_right .header-small').html('Умови легування на поверхні циліндра');
+		} else {
+			$('#c_left').show();
+			$('#c_right .header-small').html('Умови легування на правому краю пластини');
+		}
+	}
+
+	$('[name="sk"]').change(function() {
+		initCLeft();
+	})
+
 	function evaluate() {
 		var T = getParam('T'),			// chasProcessu, sec
 			L = getParam('L'),			// dovzhinaSterzhnu, m
@@ -118,8 +143,13 @@ $(document).ready(function(){
 			C2m = Math.min(Cmax, C2),	// koncentraciya na pravomu krai plastini z urahuvannyam rozchinnosti, %
 			Q1 = getParam('Q1'),		// kilkist leguuchoi prisadki na livomu krai plastini, %*m
 			Q2 = getParam('Q2'),		// kilkist leguuchoi prisadki na pravomu krai plastini, %*m
+			// Umoby leguvannya na livomu krau plastini
 			boundTypeLeft = parseInt($('[name="bound_type_left"]:checked').val()),
+			// Umoby leguvannya na pravomu krau plastini
 			boundTypeRight = parseInt($('[name="bound_type_right"]:checked').val()),
+			// Vikoristovuvaty poperedni rezultaty
+			usePrev = $('[name="use_prev"]').is(':checked'),
+			sk = parseInt($('[name="sk"]:checked').val()),
 			QL = null,					// kilkist leguuchoi prisadki na livomu krai plastini, %*m
 			QR = null,					// kilkist leguuchoi prisadki na pravomu krai plastini, %*m
 			dt = T/k,					// delta, sec
@@ -129,6 +159,8 @@ $(document).ready(function(){
 
 		console.log('boundTypeLeft: ' + boundTypeLeft);
 		console.log('boundTypeRight: ' + boundTypeRight);
+		console.log('usePrev: ' + usePrev);
+		console.log('sk: ' + sk);
 		console.log('Безрозмірна дифузія: ' + G);
 		if (G) {
 			$('#diffusion').html(G);
@@ -153,18 +185,31 @@ $(document).ready(function(){
 			console.log('Безрозмірна дифузія: ' + G);
 		}
 
-		var c_prev = new Array(n+1);
-		var c_next = new Array(n+1);
-		var c_full = new Array(k+1);
+		console.log(c_prev);
+		if (!usePrev || !c_prev) {
+			c_prev = new Array(n+1);
+			c_next = new Array(n+1);
+			c_full = new Array(k+1);
 
-		for (var t = 0; t < k+1; t++) {
-			c_full[t] = new Array(n+1);
+			for (var t = 0; t < k+1; t++) {
+				c_full[t] = new Array(n+1);
+			}
+
+			// Pochatkovi umovy
+			for (var i = 0; i < n+1; i++) {
+				c_prev[i] = 0;
+			}
+		} else {
+			console.log('Використовуємо попередні значення! ' + c_prev[0])
+			for (var i = 0; i < n+1; i++) {
+				c_full[0][i] = c_prev[i];
+			}
 		}
 
-		// Pochatkovi umovy
-		for (var i = 0; i < n+1; i++) {
-			c_prev[i] = 0;
+		if (sk) {
+			boundTypeLeft = 2;
 		}
+
 		// Granichni umovy
 		switch (boundTypeLeft) {
 			case 1:
@@ -184,7 +229,7 @@ $(document).ready(function(){
 						typeLeft3 = 2;							// 
 					} else {									// Yaksho vytraty prisadki dodatni
 						if (QL+dQL < Q1) {						// Yaksho prisadki vistachae
-							c_prev[0] = C1m;						// Granichni umovi pershogo rodu
+							c_prev[0] = C1m;					// Granichni umovi pershogo rodu
 							QL += dQL;							// Sumarna vitrata leguuchoi prisadki
 						} else if (QL < Q1) {					// Yaksho prisadki ne vistachae
 							c_prev[0] -= (Q1 - QL)/(2*G * dl);	// Pererahovuemo concentracii vyhodyachi z realnoi kilkosti prisadki
@@ -209,17 +254,17 @@ $(document).ready(function(){
 					c_prev[n] = c_prev[n-1];
 				}
 				if (typeRight3 == 1) {
-					var dQR = (c_prev[n] - c_prev[n-1])*G*dl;		// Vitrata leguuchoi prisadki dlya umov pershogo rodu
+					var dQR = (c_prev[n] - c_prev[n-1])*G*dl;	// Vitrata leguuchoi prisadki dlya umov pershogo rodu
 					if (dQR < 0) {								// Yaksho vytraty prisadki videmni
-						c_prev[n] = c_prev[n-1];					// Priminyaemo umovy drugogo rodu
+						c_prev[n] = c_prev[n-1];				// Priminyaemo umovy drugogo rodu
 						typeRight3 = 2;							// 
 					} else {									// Yaksho vytraty prisadki dodatni
 						if (QR+dQR < Q2) {						// Yaksho prisadki vistachae
-							c_prev[n] = C2m;						// Granichni umovi pershogo rodu
+							c_prev[n] = C2m;					// Granichni umovi pershogo rodu
 							QR += dQR;							// Sumarna vitrata leguuchoi prisadki
 						} else if (QR < Q2) {					// Yaksho prisadki ne vistachae
 							c_prev[n] -= (Q2 - QR)/(2*G * dl);	// Pererahovuemo concentracii vyhodyachi z realnoi kilkosti prisadki
-							c_prev[n-1] = c_prev[n];				// Priminyaemo umovy drugogo rodu
+							c_prev[n-1] = c_prev[n];			// Priminyaemo umovy drugogo rodu
 							typeRight3 = 2;						// 
 						}
 					}
@@ -229,8 +274,10 @@ $(document).ready(function(){
 				break;
 		}
 
-		for (var i = 0; i < n+1; i++) {
-			c_full[0][i] = c_prev[i];
+		if (!usePrev) {
+			for (var i = 0; i < n+1; i++) {
+				c_full[0][i] = c_prev[i];
+			}
 		}
 
 		QL = 0;
@@ -240,7 +287,11 @@ $(document).ready(function(){
 		for (var t = 1; t <= k; t++) { 			// Cikl po chasu dlya zadanih tochok
 			for (var p = 0; p < m; p++) {		// Cikl po chasu dlya promizhnih tochok
 				for (var i = 1; i < n; i++) {	// Cikl po koordinati dlya zadanih tochok
-					c_next[i] = G*c_prev[i-1] + (1-2*G)*c_prev[i] + G*c_prev[i+1];	// Rizniceva shema dlya drugogo zakonu Fika
+					if (sk) {
+						c_next[i] = G*(2*i+1)/(2*i)*c_prev[i-1] + (1-2*G)*c_prev[i] + G*(2*i-1)/(2*i)*c_prev[i+1];	// Rizniceva shema dlya drugogo zakonu Fika
+					} else {
+						c_next[i] = G*c_prev[i-1] + (1-2*G)*c_prev[i] + G*c_prev[i+1];	// Rizniceva shema dlya drugogo zakonu Fika
+					}
 				}
 
 				switch (boundTypeLeft) {
@@ -258,10 +309,10 @@ $(document).ready(function(){
 							var dQL = (c_prev[0] - c_prev[1])*G*dl;		// Vitrata leguuchoi prisadki dlya umov pershogo rodu
 							if (dQL < 0) {								// Yaksho vytraty prisadki videmni
 								c_next[0] = c_next[1];					// Priminyaemo umovy drugogo rodu
-								typeLeft3 = 2;							// 
+								typeLeft3 = 2;							
 							} else {									// Yaksho vytraty prisadki dodatni
 								if (QL+dQL < Q1) {						// Yaksho prisadki vistachae
-									c_next[0] = C1m;						// Granichni umovi pershogo rodu
+									c_next[0] = C1m;					// Granichni umovi pershogo rodu
 									QL += dQL;							// Sumarna vitrata leguuchoi prisadki
 								} else if (QL < Q1) {					// Yaksho prisadki ne vistachae
 									c_next[0] -= (Q1 - QL)/(2*G * dl);	// Pererahovuemo concentracii vyhodyachi z realnoi kilkosti prisadki
@@ -287,17 +338,17 @@ $(document).ready(function(){
 							c_next[n] = c_next[n-1];
 						}
 						if (typeRight3 == 1) {
-							var dQR = (c_prev[n] - c_prev[n-1])*G*dl;		// Vitrata leguuchoi prisadki dlya umov pershogo rodu
+							var dQR = (c_prev[n] - c_prev[n-1])*G*dl;	// Vitrata leguuchoi prisadki dlya umov pershogo rodu
 							if (dQR < 0) {								// Yaksho vytraty prisadki videmni
-								c_next[n] = c_next[n-1];					// Priminyaemo umovy drugogo rodu
+								c_next[n] = c_next[n-1];				// Priminyaemo umovy drugogo rodu
 								typeRight3 = 2;							// 
 							} else {									// Yaksho vytraty prisadki dodatni
 								if (QR+dQR < Q2) {						// Yaksho prisadki vistachae
-									c_next[n] = C2m;						// Granichni umovi pershogo rodu
+									c_next[n] = C2m;					// Granichni umovi pershogo rodu
 									QR += dQR;							// Sumarna vitrata leguuchoi prisadki
 								} else if (QR < Q2) {					// Yaksho prisadki ne vistachae
 									c_next[n] -= (Q2 - QR)/(2*G * dl);	// Pererahovuemo concentracii vyhodyachi z realnoi kilkosti prisadki
-									c_next[n-1] = c_next[n];				// Priminyaemo umovy drugogo rodu
+									c_next[n-1] = c_next[n];			// Priminyaemo umovy drugogo rodu
 									typeRight3 = 2;						// 
 								}
 							}
@@ -368,7 +419,7 @@ $(document).ready(function(){
 			$('#abs').html((canvasX*dl/xn).toFixed(10));
 
 
-			console.log(canvasX + ':' + canvasY + ':     ' + c_extend[canvasY][canvasX] + '%');
+			//console.log(canvasX + ':' + canvasY + ':     ' + c_extend[canvasY][canvasX] + '%');
 
 		});
 	};
@@ -386,8 +437,10 @@ $(document).ready(function(){
 	});
 	$('#load').click(function() {
 		setParams();
+		initCLeft()
 	});
 	$('#default').click(function() {
 		defaultParams();
+		initCLeft()
 	});
 });
