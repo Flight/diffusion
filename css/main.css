@@ -22,11 +22,13 @@ body {font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000; b
 #options .default[type="button"] {margin: 0;}
 #options .header-small {margin: 10px 0 0 0; font-weight: bold;}
 
+#info {position: relative;}
+
 #options .gradient {
 	display: inline-block;
-	width: 100px;
-	height: 10px;
-	font-size: 9px;
+	width: 150px;
+	height: 25px;
+	font-size: 15px;
 	color: #FFF;
 	margin: 0 0 0 50px;
 	background: #0000ff; /* Old browsers */
@@ -39,6 +41,10 @@ body {font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000; b
 	background: -ms-linear-gradient(left,  #0000ff 0%,#ff0000 100%); /* IE10+ */
 	background: linear-gradient(to right,  #0000ff 0%,#ff0000 100%); /* W3C */
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#0000ff', endColorstr='#ff0000',GradientType=1 ); /* IE6-8 */
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	padding: 10px 5px 0 5px;
 }
 #options .gradient .left {float: left;}
 #options .gradient .right {float: right;}

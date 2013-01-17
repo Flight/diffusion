@@ -394,9 +394,12 @@ $(document).ready(function(){
 			}
 		}
 
+		console.log('c_max: ' + c_max);
+		if (!c_max) c_max = 1;
+
 		for (var t = 0; t < k+1; t++) {	
 			for (var i = 0; i < canvasWidth; i++) {	
-				c_color = Math.ceil(c_extend[t][i] / (c_max+1) * 255);
+				c_color = Math.ceil(c_extend[t][i] / c_max * 255);
 				drawPixel(i, t, c_color, 0, 255-c_color, 255);
 			}
 		}
